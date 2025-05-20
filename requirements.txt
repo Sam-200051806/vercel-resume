@@ -10,13 +10,14 @@ PyPDF2==3.0.1
 Pillow==10.2.0
 
 # LangChain ecosystem - compatible versions
-langchain>=0.0.350,<0.1.0
+langchain==0.1.16
+langchain-core==0.1.53
 langchain-community==0.0.13
 langchain-groq==0.0.1
 langchain-pinecone==0.1.2
 
 # Vector database
-pinecone-client==3.2.2  # updated to be compatible with langchain-pinecone
+pinecone-client==3.2.2
 
 # Extra dependencies
 numpy==1.26.0
