@@ -2,14 +2,6 @@
   "version": 2,
   "builds": [
     {
-      "src": "build_files.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "staticfiles",
-        "zeroConfig": true
-      }
-    },
-    {
       "src": "resume_analyzer_project/wsgi_vercel.py",
       "use": "@vercel/python",
       "config": {
