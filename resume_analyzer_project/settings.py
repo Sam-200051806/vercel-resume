@@ -54,6 +54,10 @@ INSTALLED_APPS = [
     'resume_analyzer_project.resume_analyzer',
 ]
 
+# Disable migrations only during the build process
+if os.environ.get('VERCEL_BUILD'):
+    MIGRATION_MODULES = {app.split('.')[-1]: None for app in INSTALLED_APPS}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise for static files
@@ -93,22 +97,61 @@ WSGI_APPLICATION = 'resume_analyzer_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# For Vercel deployment, use SQLite for development and a different DB for production
-# In production, you might want to use a managed database service
-if os.environ.get('VERCEL_REGION'):
-    # Running on Vercel, use SQLite in-memory for serverless environment
+# Database configuration
+# Get database connection parameters from environment variables
+db_name = env('DB_NAME', default='postgres')
+db_user = env('DB_USER', default='postgres')
+db_password = env('DB_PASSWORD', default='Sambhav@1806')
+db_host = env('DB_HOST', default='db.wpsxiwyvmiwtyymaertc.supabase.co')
+db_port = env('DB_PORT', default='5432')
+
+# Log database connection info for debugging (without password)
+print(f"Connecting to Supabase database: '{db_name}'")
+print(f"Database host: {db_host}")
+print(f"Database user: {db_user}")
+
+# Configure the database
+if os.environ.get('VERCEL_BUILD'):
+    # During Vercel build process, use the database router to prevent database operations
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',  # Use in-memory SQLite for serverless
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': db_name,
+            'USER': db_user,
+            'PASSWORD': db_password,
+            'HOST': db_host,
+            'PORT': db_port,
+        }
+    }
+    DATABASE_ROUTERS = ['resume_analyzer_project.db_router.NoDBRouter']
+elif os.environ.get('VERCEL_REGION'):
+    # In Vercel production environment, use PostgreSQL
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': db_name,
+            'USER': db_user,
+            'PASSWORD': db_password,
+            'HOST': db_host,
+            'PORT': db_port,
+            'OPTIONS': {
+                'sslmode': 'require',
+            }
         }
     }
 else:
-    # Local development
+    # Local development - use PostgreSQL
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': db_name,
+            'USER': db_user,
+            'PASSWORD': db_password,
+            'HOST': db_host,
+            'PORT': db_port,
+            'OPTIONS': {
+                'sslmode': 'require',
+            }
         }
     }
 

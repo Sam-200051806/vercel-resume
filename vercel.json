@@ -2,11 +2,10 @@
   "version": 2,
   "builds": [
     {
-      "src": "resume_analyzer_project/wsgi.py",
+      "src": "resume_analyzer_project/wsgi_vercel.py",
       "use": "@vercel/python",
       "config": {
-        "maxLambdaSize": "15mb",
-        "runtime": "python3.9"
+        "maxLambdaSize": "15mb"
       }
     },
     {
@@ -28,11 +27,16 @@
     },
     {
       "src": "/(.*)",
-      "dest": "resume_analyzer_project/wsgi.py"
+      "dest": "resume_analyzer_project/wsgi_vercel.py"
     }
   ],
   "env": {
     "DJANGO_SETTINGS_MODULE": "resume_analyzer_project.settings",
-    "PYTHONUNBUFFERED": "1"
+    "PYTHONUNBUFFERED": "1",
+    "DB_NAME": "postgres",
+    "DB_USER": "postgres",
+    "DB_PASSWORD": "Sambhav@1806",
+    "DB_HOST": "db.wpsxiwyvmiwtyymaertc.supabase.co",
+    "DB_PORT": "5432"
   }
 }
