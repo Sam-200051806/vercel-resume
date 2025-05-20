@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume Analyzer - Home{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h1 class="display-4 mb-3">Resume Analyzer</h1>
+                <p class="lead mb-4">Upload your resume and chat with an AI assistant to get personalized insights, feedback, and answers to your questions.</p>
+                <a href="#upload-section" class="btn btn-light btn-lg">
+                    <i class="fas fa-file-upload me-2"></i>Get Started
+                </a>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135706.png" alt="Resume Analysis" class="img-fluid" style="max-height: 300px;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card feature-card h-100">
+                <div class="feature-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h4>AI-Powered Analysis</h4>
+                <p class="text-muted">Our advanced AI analyzes your resume and provides personalized insights and feedback.</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card feature-card h-100">
+                <div class="feature-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h4>Interactive Chat</h4>
+                <p class="text-muted">Ask questions about your resume and get instant, detailed responses from our AI assistant.</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card feature-card h-100">
+                <div class="feature-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h4>Secure & Private</h4>
+                <p class="text-muted">Your resume data is securely stored and processed with privacy as our top priority.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Section -->
+<div id="upload-section" class="container my-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-upload me-2"></i>Upload Your Resume</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'upload_resume' %}" enctype="multipart/form-data" class="mt-3">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="{{ form.file.id_for_label }}" class="form-label">Choose a PDF file</label>
+                            <input type="file" name="{{ form.file.name }}" id="{{ form.file.id_for_label }}" class="form-control" accept=".pdf">
+                            {% if form.file.errors %}
+                                <div class="text-danger mt-1">
+                                    {{ form.file.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Maximum file size: 10MB. PDF format only.
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>Upload and Analyze
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if resumes %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="fas fa-file-alt me-2"></i>Your Resumes</h2>
+                <span class="badge bg-primary rounded-pill">{{ resumes|length }}</span>
+            </div>
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Filename</th>
+                                <th>Uploaded</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for resume in resumes %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file-pdf text-danger me-3 fa-lg"></i>
+                                        <span>{{ resume.original_filename }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ resume.uploaded_at|date:"M d, Y H:i" }}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'resume_detail' resume.pk %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-comments me-1"></i>Chat
+                                    </a>
+                                    <a href="{% url 'delete_resume' resume.pk %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash me-1"></i>Delete
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,399 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume Analysis - {{ resume.original_filename }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-center">
+                        <div class="me-4">
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fas fa-file-alt text-white fa-2x"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h1 class="mb-1">Resume Analysis</h1>
+                            <p class="lead mb-0">{{ resume.original_filename }}</p>
+                            <p class="text-muted"><i class="far fa-calendar-alt me-1"></i> {{ resume.uploaded_at|date:"F j, Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                    <a href="{{ resume.file.url }}" class="btn btn-outline-primary me-2" target="_blank">
+                        <i class="fas fa-file-pdf me-2"></i>View PDF
+                    </a>
+                    <a href="{% url 'delete_resume' resume.pk %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash me-2"></i>Delete
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Chat Interface -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Chat with your Resume</h5>
+                    <button class="btn btn-sm btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#settingsCollapse">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                </div>
+
+                <!-- Settings Panel -->
+                <div class="collapse" id="settingsCollapse">
+                    <div class="card-body bg-light border-bottom">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3 mb-md-0">
+                                    <label for="modelSelect" class="form-label">Model</label>
+                                    <select id="modelSelect" class="form-select">
+                                        {% for model in models %}
+                                        <option value="{{ model.id }}">{{ model.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3 mb-md-0">
+                                    <label for="temperatureRange" class="form-label">Temperature: <span id="temperatureValue" class="badge bg-primary">0.0</span></label>
+                                    <input type="range" class="form-range" id="temperatureRange" min="0" max="1" step="0.1" value="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div>
+                                    <label for="maxTokensRange" class="form-label">Max Tokens: <span id="maxTokensValue" class="badge bg-primary">1000</span></label>
+                                    <input type="range" class="form-range" id="maxTokensRange" min="100" max="4000" step="100" value="1000">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Messages -->
+                <div class="card-body p-0">
+                    <div class="chat-container" id="chatContainer">
+                        {% if chat_messages %}
+                            {% for message in chat_messages %}
+                                <div class="chat-message {% if message.message_type == 'human' %}user{% else %}ai{% endif %}">
+                                    <div class="d-flex align-items-center mb-2">
+                                        {% if message.message_type == 'human' %}
+                                            <div class="avatar-circle bg-primary text-white me-2">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                            <strong>You</strong>
+                                        {% else %}
+                                            <div class="avatar-circle bg-success text-white me-2">
+                                                <i class="fas fa-robot"></i>
+                                            </div>
+                                            <strong>AI Assistant</strong>
+                                        {% endif %}
+                                    </div>
+                                    <div>{{ message.content|linebreaks }}</div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <div class="mb-4">
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-comments fa-2x text-primary"></i>
+                                    </div>
+                                </div>
+                                <h4>Start a conversation</h4>
+                                <p class="text-muted mb-4">Ask questions about this resume to get insights.</p>
+                                <div class="row justify-content-center">
+                                    <div class="col-md-8">
+                                        <div class="list-group">
+                                            <button type="button" class="list-group-item list-group-item-action" onclick="suggestQuestion('What are the candidate\'s key skills?')">
+                                                <i class="fas fa-lightbulb text-warning me-2"></i>What are the candidate's key skills?
+                                            </button>
+                                            <button type="button" class="list-group-item list-group-item-action" onclick="suggestQuestion('Summarize their work experience.')">
+                                                <i class="fas fa-lightbulb text-warning me-2"></i>Summarize their work experience.
+                                            </button>
+                                            <button type="button" class="list-group-item list-group-item-action" onclick="suggestQuestion('What technologies do they know?')">
+                                                <i class="fas fa-lightbulb text-warning me-2"></i>What technologies do they know?
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Chat Input Form -->
+                <div class="card-footer">
+                    <form id="chatForm" class="chat-form">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            {{ chat_form.content }}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Resume Info Panel -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Resume Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <i class="fas fa-file-pdf fa-2x text-danger"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">{{ resume.original_filename }}</h6>
+                            <small class="text-muted">PDF Document</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="far fa-calendar-alt me-2"></i>Date</span>
+                            <span class="text-muted">{{ resume.uploaded_at|date:"F j, Y" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span><i class="fas fa-comments me-2"></i>Messages</span>
+                            <span class="badge bg-primary rounded-pill">{{ chat_messages|length }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tips Panel -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb me-2 text-warning"></i>Tips for Better Results</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <div class="d-flex">
+                                <div class="me-3 text-primary">
+                                    <i class="fas fa-check-circle fa-lg"></i>
+                                </div>
+                                <div>
+                                    <strong>Be specific</strong>
+                                    <p class="mb-0 text-muted">Ask targeted questions about skills, experience, or education</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex">
+                                <div class="me-3 text-primary">
+                                    <i class="fas fa-check-circle fa-lg"></i>
+                                </div>
+                                <div>
+                                    <strong>Request summaries</strong>
+                                    <p class="mb-0 text-muted">Ask for summaries of specific resume sections</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex">
+                                <div class="me-3 text-primary">
+                                    <i class="fas fa-check-circle fa-lg"></i>
+                                </div>
+                                <div>
+                                    <strong>Compare to jobs</strong>
+                                    <p class="mb-0 text-muted">Ask how the resume matches specific job requirements</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="d-flex">
+                                <div class="me-3 text-primary">
+                                    <i class="fas fa-check-circle fa-lg"></i>
+                                </div>
+                                <div>
+                                    <strong>Adjust settings</strong>
+                                    <p class="mb-0 text-muted">Increase temperature for more creative responses</p>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to suggest a question
+    function suggestQuestion(question) {
+        $('#id_content').val(question);
+        $('#chatForm').submit();
+    }
+
+    $(document).ready(function() {
+        // Update temperature and max tokens values with badges
+        $('#temperatureRange').on('input', function() {
+            $('#temperatureValue').text($(this).val());
+        });
+
+        $('#maxTokensRange').on('input', function() {
+            $('#maxTokensValue').text($(this).val());
+        });
+
+        // Scroll to bottom of chat container
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chatContainer');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Scroll to bottom on page load
+        scrollToBottom();
+
+        // Handle chat form submission
+        $('#chatForm').on('submit', function(e) {
+            e.preventDefault();
+
+            const message = $('#id_content').val().trim();
+            if (!message) return;
+
+            // Get model parameters
+            const model = $('#modelSelect').val();
+            const temperature = $('#temperatureRange').val();
+            const maxTokens = $('#maxTokensRange').val();
+
+            // Add user message to chat
+            const userMessageHtml = `
+                <div class="chat-message user">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="avatar-circle bg-primary text-white me-2">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <strong>You</strong>
+                    </div>
+                    <div>${message}</div>
+                </div>
+            `;
+            $('#chatContainer').append(userMessageHtml);
+            scrollToBottom();
+
+            // Clear input
+            $('#id_content').val('');
+
+            // Add loading indicator with improved styling
+            const loadingHtml = `
+                <div class="chat-message ai" id="loadingMessage">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="avatar-circle bg-success text-white me-2">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <strong>AI Assistant</strong>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span>Analyzing resume...</span>
+                    </div>
+                </div>
+            `;
+            $('#chatContainer').append(loadingHtml);
+            scrollToBottom();
+
+            // Send request to server
+            $.ajax({
+                url: "{% url 'chat_message' resume.pk %}",
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                    'content': message,
+                    'model': model,
+                    'temperature': temperature,
+                    'max_tokens': maxTokens
+                },
+                success: function(response) {
+                    // Remove loading indicator
+                    $('#loadingMessage').remove();
+
+                    // Add AI response to chat with improved styling
+                    const aiMessageHtml = `
+                        <div class="chat-message ai">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="avatar-circle bg-success text-white me-2">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <strong>AI Assistant</strong>
+                            </div>
+                            <div>${response.ai_message.replace(/\n/g, '<br>')}</div>
+                        </div>
+                    `;
+                    $('#chatContainer').append(aiMessageHtml);
+                    scrollToBottom();
+
+                    // Update message count
+                    const currentCount = parseInt($('.fa-comments').closest('li').find('.badge').text()) || 0;
+                    $('.fa-comments').closest('li').find('.badge').text(currentCount + 2); // +2 for both user and AI messages
+                },
+                error: function(xhr, status, error) {
+                    // Remove loading indicator
+                    $('#loadingMessage').remove();
+
+                    // Add error message with improved styling
+                    let errorMessage = 'An error occurred while processing your request.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+
+                    const errorHtml = `
+                        <div class="chat-message ai">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="avatar-circle bg-danger text-white me-2">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <strong>Error</strong>
+                            </div>
+                            <div class="alert alert-danger mb-0">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                ${errorMessage}
+                            </div>
+                        </div>
+                    `;
+                    $('#chatContainer').append(errorHtml);
+                    scrollToBottom();
+                }
+            });
+        });
+
+        // Add focus to chat input
+        $('#id_content').focus();
+
+        // Add keyboard shortcut (Ctrl+Enter) to submit form
+        $('#id_content').on('keydown', function(e) {
+            if (e.ctrlKey && e.keyCode === 13) {
+                $('#chatForm').submit();
+            }
+        });
+
+        // Add tooltip for keyboard shortcut
+        $('#id_content').attr('title', 'Press Ctrl+Enter to send');
+    });
+</script>
+{% endblock %}
