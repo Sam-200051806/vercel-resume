@@ -1,24 +1,26 @@
 # Django and related packages
-Django==4.2.10
-django-environ==0.11.2
-whitenoise==6.6.0
-gunicorn==21.2.0
-psycopg2-binary==2.9.9
+Django>=4.2.16
+django-environ>=0.11.2
+whitenoise>=6.6.0
+gunicorn>=21.2.0
+psycopg2-binary>=2.9.9
 
 # PDF processing
-PyPDF2==3.0.1
-Pillow==10.2.0
+PyPDF2>=3.0.1
+Pillow>=10.2.0
 
-# LangChain ecosystem - compatible versions
-langchain==0.1.16
-langchain-core==0.1.53
-langchain-community==0.0.13
-langchain-groq==0.0.1
-langchain-pinecone==0.1.2
+# LangChain ecosystem - without version constraints
+langchain
+langchain-core
+langchain-community
+langchain-huggingface
+langchain-groq
+langchain-pinecone
 
 # Vector database
-pinecone-client==3.2.2
+pinecone-client
 
 # Extra dependencies
-numpy==1.26.0
-pydantic==2.0.0
+numpy
+pydantic>=2.0.0,<3.0.0
+pydantic-settings>=2.0.0

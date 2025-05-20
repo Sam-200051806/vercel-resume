@@ -4,7 +4,7 @@
   "description": "Resume Analyzer Django Application",
   "private": true,
   "scripts": {
-    "build": "pip install --upgrade pip && pip install Django==4.2.10 && pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    "build": "pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --noinput"
   },
   "engines": {
     "node": ">=14.0.0"
