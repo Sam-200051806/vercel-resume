@@ -32,11 +32,6 @@
   ],
   "env": {
     "DJANGO_SETTINGS_MODULE": "resume_analyzer_project.settings",
-    "PYTHONUNBUFFERED": "1",
-    "DB_NAME": "postgres",
-    "DB_USER": "postgres",
-    "DB_PASSWORD": "Sambhav@1806",
-    "DB_HOST": "db.wpsxiwyvmiwtyymaertc.supabase.co",
-    "DB_PORT": "5432"
+    "PYTHONUNBUFFERED": "1"
   }
 }

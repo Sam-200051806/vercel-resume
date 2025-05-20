@@ -15,17 +15,8 @@ if path not in sys.path:
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'resume_analyzer_project.settings')
 os.environ['VERCEL_REGION'] = 'vercel'  # Mark as running on Vercel
 
-# Set database environment variables if not already set
-if 'DB_NAME' not in os.environ:
-    os.environ['DB_NAME'] = 'postgres'
-if 'DB_USER' not in os.environ:
-    os.environ['DB_USER'] = 'postgres'
-if 'DB_PASSWORD' not in os.environ:
-    os.environ['DB_PASSWORD'] = 'Sambhav@1806'
-if 'DB_HOST' not in os.environ:
-    os.environ['DB_HOST'] = 'db.wpsxiwyvmiwtyymaertc.supabase.co'
-if 'DB_PORT' not in os.environ:
-    os.environ['DB_PORT'] = '5432'
+# Note: Database credentials should be set in Vercel environment variables
+# and not hardcoded here for security reasons
 
 # Import Django's WSGI handler
 from django.core.wsgi import get_wsgi_application

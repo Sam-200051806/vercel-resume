@@ -8,11 +8,8 @@ python3 -m pip install psycopg2-binary
 
 # Set environment variables for the build process
 export VERCEL_BUILD=1
-export DB_NAME="postgres"
-export DB_USER="postgres"
-export DB_PASSWORD="Sambhav@1806"
-export DB_HOST="db.wpsxiwyvmiwtyymaertc.supabase.co"
-export DB_PORT="5432"
+# Note: Database credentials should be set in Vercel environment variables
+# and not hardcoded here for security reasons
 
 # Collect static files
 echo "Collecting static files..."

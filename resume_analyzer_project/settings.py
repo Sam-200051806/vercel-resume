@@ -99,14 +99,20 @@ WSGI_APPLICATION = 'resume_analyzer_project.wsgi.application'
 
 # Database configuration
 # Get database connection parameters from environment variables
-db_name = env('DB_NAME', default='postgres')
+db_name = env('DB_NAME', default='resumedb')  # Use resumedb for local development
 db_user = env('DB_USER', default='postgres')
-db_password = env('DB_PASSWORD', default='Sambhav@1806')
-db_host = env('DB_HOST', default='db.wpsxiwyvmiwtyymaertc.supabase.co')
+db_password = env('DB_PASSWORD', default='sambhav')  # Local password
+db_host = env('DB_HOST', default='localhost')  # Use localhost for local development
 db_port = env('DB_PORT', default='5432')
 
+# Determine if we're using Supabase or local database
+is_supabase = db_host and 'supabase.co' in db_host
+
 # Log database connection info for debugging (without password)
-print(f"Connecting to Supabase database: '{db_name}'")
+if is_supabase:
+    print(f"Connecting to Supabase database: '{db_name}'")
+else:
+    print(f"Connecting to local database: '{db_name}'")
 print(f"Database host: {db_host}")
 print(f"Database user: {db_user}")
 
@@ -124,8 +130,8 @@ if os.environ.get('VERCEL_BUILD'):
         }
     }
     DATABASE_ROUTERS = ['resume_analyzer_project.db_router.NoDBRouter']
-elif os.environ.get('VERCEL_REGION'):
-    # In Vercel production environment, use PostgreSQL
+elif os.environ.get('VERCEL_REGION') or is_supabase:
+    # In Vercel production environment or when using Supabase, use PostgreSQL with SSL
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -140,7 +146,7 @@ elif os.environ.get('VERCEL_REGION'):
         }
     }
 else:
-    # Local development - use PostgreSQL
+    # Local development - use PostgreSQL without SSL
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -149,9 +155,6 @@ else:
             'PASSWORD': db_password,
             'HOST': db_host,
             'PORT': db_port,
-            'OPTIONS': {
-                'sslmode': 'require',
-            }
         }
     }
 
