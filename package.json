@@ -1,0 +1,12 @@
+{
+  "name": "resume-analyzer",
+  "version": "1.0.0",
+  "description": "Resume Analyzer Django Application",
+  "private": true,
+  "scripts": {
+    "build": "python -m pip install --upgrade pip && python -m pip install -r requirements.txt && mkdir -p staticfiles && echo 'This file ensures the staticfiles directory is not empty.' > staticfiles/.keep"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
