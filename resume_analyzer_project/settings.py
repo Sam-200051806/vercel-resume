@@ -31,7 +31,7 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-h%-_kt+bwop2ac!=sdl!tcr*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.vercel.app', '.now.sh'])
 
 # Pinecone settings
 PINECONE_API_KEY = env('PINECONE_API_KEY', default='')
@@ -93,12 +93,24 @@ WSGI_APPLICATION = 'resume_analyzer_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# For Vercel deployment, use SQLite for development and a different DB for production
+# In production, you might want to use a managed database service
+if os.environ.get('VERCEL_REGION'):
+    # Running on Vercel, use SQLite in-memory for serverless environment
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',  # Use in-memory SQLite for serverless
+        }
     }
-}
+else:
+    # Local development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -149,6 +161,20 @@ if not DEBUG:
 else:
     # In development, use the default static files storage
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+# Vercel-specific settings
+if os.environ.get('VERCEL_REGION'):
+    # Force HTTPS on Vercel
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # Set security headers
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
