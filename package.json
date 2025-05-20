@@ -4,7 +4,7 @@
   "description": "Resume Analyzer Django Application",
   "private": true,
   "scripts": {
-    "build": "pip install --upgrade pip && pip install Django==4.2.10 && pip install -r requirements.txt && mkdir -p staticfiles && echo 'This file ensures the staticfiles directory is not empty.' > staticfiles/.keep"
+    "build": "pip install --upgrade pip && pip install Django==4.2.10 && pip install langchain-core==0.1.28 && pip install -r requirements.txt && mkdir -p staticfiles && echo 'This file ensures the staticfiles directory is not empty.' > staticfiles/.keep"
   },
   "engines": {
     "node": ">=14.0.0"
