@@ -22,8 +22,9 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', RedirectView.as_view(pattern_name='home')),
+    path('', include('resume_analyzer_project.core.urls')),
     path('resume-analyzer/', include('resume_analyzer_project.resume_analyzer.urls')),
+    path('core/', include('resume_analyzer_project.core.urls')),
 ]
 
 # Add media and static file serving for development
