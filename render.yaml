@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: vercel-resume
+    env: python
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn resume_analyzer_project.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: WEB_CONCURRENCY
+        value: 4
+      - key: DJANGO_SETTINGS_MODULE
+        value: resume_analyzer_project.settings
+      - key: RENDER
+        value: 'true'
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: 'false'
+      - key: ALLOWED_HOSTS
+        value: 'localhost,127.0.0.1,.vercel.app,.now.sh,.onrender.com,vercel-resume.onrender.com'
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vercel-resume-db
+          property: connectionString
+
+databases:
+  - name: vercel-resume-db
+    databaseName: resumedb
+    user: postgres
+    plan: free
