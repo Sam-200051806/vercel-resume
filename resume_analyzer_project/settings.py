@@ -159,15 +159,48 @@ elif os.environ.get('RENDER'):
     # For Render deployment
     import dj_database_url
     database_url = os.environ.get('DATABASE_URL')
+    print(f"RENDER environment detected")
+
+    # Print all environment variables for debugging (excluding sensitive values)
+    for key, value in os.environ.items():
+        if 'SECRET' not in key.upper() and 'PASSWORD' not in key.upper() and 'KEY' not in key.upper():
+            print(f"Environment variable: {key}={value}")
+        else:
+            print(f"Environment variable: {key}=*****")
+
     if database_url:
-        print(f"Using DATABASE_URL from environment")
-        DATABASES = {
-            'default': dj_database_url.config(
-                default=database_url,
-                conn_max_age=600,
-                conn_health_checks=True,
-            )
-        }
+        print(f"Using DATABASE_URL from environment (length: {len(database_url)})")
+        # Print a sanitized version of the URL (hiding password)
+        sanitized_url = database_url.replace(database_url.split('@')[0].split(':')[-1], '*****')
+        print(f"Sanitized DATABASE_URL: {sanitized_url}")
+
+        try:
+            # Force SQLite for now to avoid connection issues
+            print("IMPORTANT: Temporarily using SQLite instead of PostgreSQL for testing")
+            DATABASES = {
+                'default': {
+                    'ENGINE': 'django.db.backends.sqlite3',
+                    'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+                }
+            }
+
+            # Uncomment this when ready to use PostgreSQL again
+            # DATABASES = {
+            #     'default': dj_database_url.config(
+            #         default=database_url,
+            #         conn_max_age=600,
+            #         conn_health_checks=True,
+            #     )
+            # }
+        except Exception as e:
+            print(f"Error configuring database with DATABASE_URL: {str(e)}")
+            # Fallback to SQLite
+            DATABASES = {
+                'default': {
+                    'ENGINE': 'django.db.backends.sqlite3',
+                    'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+                }
+            }
     else:
         print(f"No DATABASE_URL found, using fallback database configuration")
         # Fallback to SQLite for testing

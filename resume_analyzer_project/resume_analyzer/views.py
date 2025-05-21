@@ -20,12 +20,30 @@ from .utils import (
 
 def home(request):
     """Home page view"""
+    import logging
+    logger = logging.getLogger(__name__)
+
     form = ResumeUploadForm()
-    resumes = Resume.objects.all().order_by('-uploaded_at')
+
+    try:
+        # Try to get resumes from database
+        logger.info("Attempting to fetch resumes from database")
+        resumes = Resume.objects.all().order_by('-uploaded_at')
+        logger.info(f"Successfully fetched {resumes.count()} resumes")
+    except Exception as e:
+        # Handle database connection errors
+        logger.error(f"Error fetching resumes: {str(e)}")
+        messages.error(request, f"Database connection error: {str(e)}")
+        resumes = []
+
+    # Check if we're running on Render
+    import os
+    is_render = os.environ.get('RENDER', 'False').lower() == 'true'
 
     return render(request, 'resume_analyzer/home.html', {
         'form': form,
-        'resumes': resumes
+        'resumes': resumes,
+        'is_render': is_render
     })
 
 def upload_resume(request):
