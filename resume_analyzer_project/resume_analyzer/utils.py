@@ -1,7 +1,14 @@
 import os
 import tempfile
 from PyPDF2 import PdfReader
-from pdf2image import convert_from_path
+
+# Try to import pdf2image, but don't fail if it's not available
+try:
+    from pdf2image import convert_from_path
+    PDF2IMAGE_AVAILABLE = True
+except ImportError:
+    PDF2IMAGE_AVAILABLE = False
+    print("Warning: pdf2image not available. Some features may be limited.")
 import hashlib
 from django.conf import settings
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -42,9 +49,20 @@ def load_resume(file_path):
                 page_text = page.extract_text()
                 if page_text:
                     text += page_text + "\n\n"
+
+            # If we got very little text, try using pdf2image if available
+            if len(text.strip()) < 100 and PDF2IMAGE_AVAILABLE:
+                try:
+                    logger.info("Attempting to extract text using pdf2image as fallback")
+                    # This part will only run if pdf2image is available
+                    images = convert_from_path(file_path)
+                    # Process images if needed
+                except Exception as img_error:
+                    logger.error(f"Error using pdf2image: {str(img_error)}")
+
             return text
     except Exception as e:
-        print(f"Error extracting text from PDF: {e}")
+        logger.error(f"Error extracting text from PDF: {str(e)}")
         return None
 
 def compute_file_hash(file_content):
