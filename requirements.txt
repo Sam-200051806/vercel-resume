@@ -12,18 +12,25 @@ PyPDF2>=3.0.1
 Pillow>=10.2.0
 pdf2image>=1.16.0
 
-# LangChain ecosystem - without version constraints
-langchain
-langchain-core
-langchain-community
-langchain-huggingface
-langchain-groq
-langchain-pinecone
+# LangChain ecosystem - with specific versions
+langchain==0.1.0
+langchain-core==0.1.28
+langchain-community==0.0.19
+langchain-huggingface==0.0.2
+langchain-groq==0.0.1
+langchain-pinecone==0.0.1
 
 # Vector database
-pinecone-client
+pinecone-client==3.0.0
+
+# ML dependencies - with specific versions
+numpy==1.26.4
+scipy==1.12.0
+scikit-learn==1.4.0
+sentence-transformers==2.5.0
+transformers==4.38.0
+torch==2.2.0
 
 # Extra dependencies
-numpy
 pydantic>=2.0.0,<3.0.0
 pydantic-settings>=2.0.0
