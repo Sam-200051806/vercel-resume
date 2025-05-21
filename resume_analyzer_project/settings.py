@@ -62,10 +62,11 @@ INSTALLED_APPS = [
     # Custom apps
     'resume_analyzer_project.core',
     'resume_analyzer_project.resume_analyzer',
-
-    # Third-party apps
-    'sslserver',  # For HTTPS in development
 ]
+
+# Add sslserver only in development, not in production
+if DEBUG and not os.environ.get('RENDER'):
+    INSTALLED_APPS += ['sslserver']
 
 # Disable migrations only during the build process
 if os.environ.get('VERCEL_BUILD'):
@@ -178,23 +179,15 @@ elif os.environ.get('RENDER'):
         print(f"Sanitized DATABASE_URL: {sanitized_url}")
 
         try:
-            # Force SQLite for now to avoid connection issues
-            print("IMPORTANT: Temporarily using SQLite instead of PostgreSQL for testing")
+            # Use PostgreSQL via dj_database_url
+            print("Using PostgreSQL via dj_database_url")
             DATABASES = {
-                'default': {
-                    'ENGINE': 'django.db.backends.sqlite3',
-                    'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-                }
+                'default': dj_database_url.config(
+                    default=database_url,
+                    conn_max_age=600,
+                    conn_health_checks=True,
+                )
             }
-
-            # Uncomment this when ready to use PostgreSQL again
-            # DATABASES = {
-            #     'default': dj_database_url.config(
-            #         default=database_url,
-            #         conn_max_age=600,
-            #         conn_health_checks=True,
-            #     )
-            # }
         except Exception as e:
             print(f"Error configuring database with DATABASE_URL: {str(e)}")
             # Fallback to SQLite
