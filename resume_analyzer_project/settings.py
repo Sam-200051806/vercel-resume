@@ -183,17 +183,93 @@ else:
 
 # Configure the database - ONLY use Supabase PostgreSQL via DATABASE_URL
 import dj_database_url
+import os
 
 # Always use DATABASE_URL for all environments
 print("Using Supabase PostgreSQL via DATABASE_URL for all environments")
-DATABASES = {
-    'default': dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=600,
-        conn_health_checks=True,
-        ssl_require=True,
-    )
-}
+
+# For Render deployment, use a modified approach to avoid IPv6 issues
+if os.environ.get('RENDER'):
+    print("Using modified connection approach for Render")
+
+    # Parse the DATABASE_URL manually to extract components
+    import urllib.parse
+    db_url = os.environ.get('DATABASE_URL', '')
+
+    if db_url:
+        # Parse the URL to get components
+        parsed_url = urllib.parse.urlparse(db_url)
+
+        # Extract username and password from netloc
+        userpass, hostport = parsed_url.netloc.split('@', 1)
+        username, password = userpass.split(':', 1)
+
+        # URL decode the password (handle special characters)
+        password = urllib.parse.unquote(password)
+
+        # Extract host and port
+        if ':' in hostport:
+            host, port = hostport.split(':', 1)
+        else:
+            host = hostport
+            port = '5432'  # Default PostgreSQL port
+
+        # Try to resolve hostname to IPv4 if it's a domain
+        if not host.startswith('[') and not all(c.isdigit() or c == '.' for c in host):
+            try:
+                import socket
+                print(f"Attempting to resolve {host} to IPv4 address...")
+                # Get all addresses, filter for IPv4
+                addrinfo = socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM)
+                if addrinfo:
+                    ipv4_addr = addrinfo[0][4][0]  # First IPv4 address
+                    print(f"Resolved {host} to IPv4 address: {ipv4_addr}")
+                    host = ipv4_addr
+            except Exception as e:
+                print(f"Failed to resolve {host} to IPv4: {str(e)}")
+
+        # Extract database name from path
+        path = parsed_url.path
+        if path.startswith('/'):
+            path = path[1:]
+
+        # Set up direct connection parameters
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': path,
+                'USER': username,
+                'PASSWORD': password,
+                'HOST': host,
+                'PORT': port,
+                'OPTIONS': {
+                    'sslmode': 'require',
+                    'target_session_attrs': 'read-write',
+                },
+            }
+        }
+
+        print(f"Configured direct database connection to host: {host}, database: {path}")
+    else:
+        # Fallback to default configuration
+        DATABASES = {
+            'default': dj_database_url.config(
+                default=DATABASE_URL,
+                conn_max_age=600,
+                conn_health_checks=True,
+                ssl_require=True,
+            )
+        }
+else:
+    # Local development - use DATABASE_URL
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True,
+        )
+    }
 
 # Add database router for Vercel build if needed
 if os.environ.get('VERCEL_BUILD'):
