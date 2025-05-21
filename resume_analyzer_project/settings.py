@@ -158,13 +158,25 @@ elif os.environ.get('VERCEL_REGION') or is_supabase:
 elif os.environ.get('RENDER'):
     # For Render deployment
     import dj_database_url
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        print(f"Using DATABASE_URL from environment")
+        DATABASES = {
+            'default': dj_database_url.config(
+                default=database_url,
+                conn_max_age=600,
+                conn_health_checks=True,
+            )
+        }
+    else:
+        print(f"No DATABASE_URL found, using fallback database configuration")
+        # Fallback to SQLite for testing
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+            }
+        }
 else:
     # Local development - use PostgreSQL without SSL
     DATABASES = {
