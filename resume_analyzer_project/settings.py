@@ -31,7 +31,17 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-h%-_kt+bwop2ac!=sdl!tcr*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '.vercel.app', '.now.sh', '.onrender.com', 'vercel-resume.onrender.com'])
+# Get ALLOWED_HOSTS from environment variable or use default
+allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', '')
+if allowed_hosts_env:
+    # If environment variable is set, use it (comma-separated list)
+    ALLOWED_HOSTS = allowed_hosts_env.split(',')
+else:
+    # Otherwise use default list
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.vercel.app', '.now.sh', '.onrender.com', 'vercel-resume.onrender.com']
+
+# Print for debugging
+print(f"ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 
 # Pinecone settings
 PINECONE_API_KEY = env('PINECONE_API_KEY', default='')
@@ -278,3 +288,9 @@ LOGGING = {
         },
     },
 }
+
+# Render-specific settings
+if os.environ.get('RENDER'):
+    # Get the port from the PORT environment variable
+    PORT = int(os.environ.get('PORT', 8000))
+    print(f"Using PORT: {PORT}")
