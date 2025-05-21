@@ -14,7 +14,7 @@ from .utils import (
     load_resume,
     compute_file_hash,
     get_embeddings,
-    clear_pinecone_data,
+    clear_vector_data,
     query_resume
 )
 
@@ -268,17 +268,19 @@ def delete_resume(request, pk):
         try:
             logger.info(f"Attempting to delete resume {pk}: {resume.original_filename}")
 
-            namespace = resume.vector_namespace
+            # Get the resume ID from the file hash
+            resume_id = resume.file_hash
 
             try:
-                if namespace:
-                    logger.info(f"Clearing Pinecone data for namespace: {namespace}")
-                    clear_pinecone_data(settings.INDEX_NAME, namespace)
+                if resume_id:
+                    logger.info(f"Clearing vector data for resume ID: {resume_id}")
+                    from .utils import clear_vector_data
+                    clear_vector_data(resume_id)
                 else:
-                    logger.warning("No namespace found for this resume, skipping Pinecone data clearing")
-            except Exception as pinecone_error:
-                logger.error(f"Error clearing Pinecone data: {str(pinecone_error)}")
-                messages.warning(request, f"Warning: Could not clear vector data: {str(pinecone_error)}")
+                    logger.warning("No resume ID found, skipping vector data clearing")
+            except Exception as vector_error:
+                logger.error(f"Error clearing vector data: {str(vector_error)}")
+                messages.warning(request, f"Warning: Could not clear vector data: {str(vector_error)}")
 
             logger.info(f"Deleting resume from database: {resume.original_filename}")
             resume.delete()

@@ -16,7 +16,10 @@ import environ
 
 # Initialize environment variables
 env = environ.Env()
-environ.Env.read_env()
+# Explicitly set the path to the .env file
+env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+print(f"Loading environment from: {env_file}")
+environ.Env.read_env(env_file)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -48,6 +51,33 @@ PINECONE_API_KEY = env('PINECONE_API_KEY', default='')
 INDEX_NAME = env('INDEX_NAME', default='')
 GROQ_API_KEY = env('GROQ_API_KEY', default='')
 
+# Database URL for Supabase PostgreSQL connection
+DATABASE_URL = env('DATABASE_URL', default='')
+print(f"DATABASE_URL is {'set' if DATABASE_URL else 'NOT set'}")
+if DATABASE_URL:
+    # Print a sanitized version of the URL (hiding password)
+    try:
+        # Handle the case where the password might contain @ characters
+        url_parts = DATABASE_URL.split('@')
+        if len(url_parts) > 2:  # Password contains @ characters
+            credentials = '@'.join(url_parts[:-1])
+            host_part = url_parts[-1]
+        else:
+            credentials = url_parts[0]
+            host_part = url_parts[1]
+
+        # Split credentials into user and password
+        user_pass = credentials.split('://')[-1].split(':')
+        if len(user_pass) > 1:
+            user = user_pass[0]
+            # Replace password with *****
+            sanitized_url = f"{DATABASE_URL.split('://')[0]}://{user}:*****@{host_part}"
+            print(f"Sanitized DATABASE_URL: {sanitized_url}")
+        else:
+            print("DATABASE_URL format not recognized, unable to sanitize")
+    except Exception as e:
+        print(f"Error sanitizing DATABASE_URL: {str(e)}")
+
 
 # Application definition
 
@@ -62,6 +92,9 @@ INSTALLED_APPS = [
     # Custom apps
     'resume_analyzer_project.core',
     'resume_analyzer_project.resume_analyzer',
+
+    # Third-party apps
+    'sslserver',  # Add django-sslserver for HTTPS support
 ]
 
 # Disable migrations only during the build process
@@ -115,51 +148,61 @@ db_password = env('DB_PASSWORD', default='sambhav')  # Local password
 db_host = env('DB_HOST', default='localhost')  # Use localhost for local development
 db_port = env('DB_PORT', default='5432')
 
-# Determine if we're using Supabase or local database
-is_supabase = db_host and 'supabase.co' in db_host
+# Check if we're using DATABASE_URL for Supabase
+if DATABASE_URL:
+    print(f"DATABASE_URL is set, will use Supabase PostgreSQL")
+    # Parse the DATABASE_URL to get the host for logging
+    try:
+        # Handle the case where the password might contain @ characters
+        url_parts = DATABASE_URL.split('@')
+        if len(url_parts) > 2:  # Password contains @ characters
+            credentials = '@'.join(url_parts[:-1])
+            host_part = url_parts[-1]
+        else:
+            credentials = url_parts[0]
+            host_part = url_parts[1]
 
-# Log database connection info for debugging (without password)
-if is_supabase:
-    print(f"Connecting to Supabase database: '{db_name}'")
+        db_host_from_url = host_part.split(':')[0]
+        db_name_from_url = DATABASE_URL.split('/')[-1]
+        print(f"Supabase host from URL: {db_host_from_url}")
+        print(f"Database name from URL: {db_name_from_url}")
+    except Exception as e:
+        print(f"Error parsing DATABASE_URL: {str(e)}")
 else:
-    print(f"Connecting to local database: '{db_name}'")
-print(f"Database host: {db_host}")
-print(f"Database user: {db_user}")
+    # Determine if we're using Supabase or local database from DB_HOST
+    is_supabase = db_host and 'supabase.co' in db_host
 
-# Configure the database
+    # Log database connection info for debugging (without password)
+    if is_supabase:
+        print(f"Connecting to Supabase database: '{db_name}'")
+    else:
+        print(f"Connecting to local database: '{db_name}'")
+    print(f"Database host: {db_host}")
+    print(f"Database user: {db_user}")
+
+# Configure the database - ONLY use Supabase PostgreSQL via DATABASE_URL
+import dj_database_url
+
+# Always use DATABASE_URL for all environments
+print("Using Supabase PostgreSQL via DATABASE_URL for all environments")
+DATABASES = {
+    'default': dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+        ssl_require=True,
+    )
+}
+
+# Add database router for Vercel build if needed
 if os.environ.get('VERCEL_BUILD'):
-    # During Vercel build process, use the database router to prevent database operations
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': db_name,
-            'USER': db_user,
-            'PASSWORD': db_password,
-            'HOST': db_host,
-            'PORT': db_port,
-        }
-    }
     DATABASE_ROUTERS = ['resume_analyzer_project.db_router.NoDBRouter']
-elif os.environ.get('VERCEL_REGION') or is_supabase:
-    # In Vercel production environment or when using Supabase, use PostgreSQL with SSL
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': db_name,
-            'USER': db_user,
-            'PASSWORD': db_password,
-            'HOST': db_host,
-            'PORT': db_port,
-            'OPTIONS': {
-                'sslmode': 'require',
-            }
-        }
-    }
 elif os.environ.get('RENDER'):
     # For Render deployment
-    import dj_database_url
-    database_url = os.environ.get('DATABASE_URL')
     print(f"RENDER environment detected")
+
+    # DATABASE_URL is already handled in the main database configuration above
+    # This section is only for Render-specific logging
 
     # Print all environment variables for debugging (excluding sensitive values)
     for key, value in os.environ.items():
@@ -167,61 +210,9 @@ elif os.environ.get('RENDER'):
             print(f"Environment variable: {key}={value}")
         else:
             print(f"Environment variable: {key}=*****")
-
-    if database_url:
-        print(f"Using DATABASE_URL from environment (length: {len(database_url)})")
-        # Print a sanitized version of the URL (hiding password)
-        sanitized_url = database_url.replace(database_url.split('@')[0].split(':')[-1], '*****')
-        print(f"Sanitized DATABASE_URL: {sanitized_url}")
-
-        try:
-            # Force SQLite for now to avoid connection issues
-            print("IMPORTANT: Temporarily using SQLite instead of PostgreSQL for testing")
-            DATABASES = {
-                'default': {
-                    'ENGINE': 'django.db.backends.sqlite3',
-                    'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-                }
-            }
-
-            # Uncomment this when ready to use PostgreSQL again
-            # DATABASES = {
-            #     'default': dj_database_url.config(
-            #         default=database_url,
-            #         conn_max_age=600,
-            #         conn_health_checks=True,
-            #     )
-            # }
-        except Exception as e:
-            print(f"Error configuring database with DATABASE_URL: {str(e)}")
-            # Fallback to SQLite
-            DATABASES = {
-                'default': {
-                    'ENGINE': 'django.db.backends.sqlite3',
-                    'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-                }
-            }
-    else:
-        print(f"No DATABASE_URL found, using fallback database configuration")
-        # Fallback to SQLite for testing
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-            }
-        }
 else:
-    # Local development - use PostgreSQL without SSL
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': db_name,
-            'USER': db_user,
-            'PASSWORD': db_password,
-            'HOST': db_host,
-            'PORT': db_port,
-        }
-    }
+    # Local development - DATABASE_URL is already handled in the main configuration
+    print("Local development environment detected")
 
 
 # Password validation

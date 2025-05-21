@@ -63,6 +63,8 @@ class PineconeSingleton:
     def is_initialized(self):
         return self._initialized
 
+
+
 def resume_upload_path(instance, filename):
     """Generate a unique path for uploaded resumes"""
     hash_obj = hashlib.md5(f"{filename}{timezone.now()}".encode())
