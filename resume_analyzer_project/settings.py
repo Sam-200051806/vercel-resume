@@ -92,10 +92,11 @@ INSTALLED_APPS = [
     # Custom apps
     'resume_analyzer_project.core',
     'resume_analyzer_project.resume_analyzer',
-
-    # Third-party apps
-    'sslserver',  # Add django-sslserver for HTTPS support
 ]
+
+# Add sslserver only in local development, not in production
+if DEBUG and not os.environ.get('RENDER'):
+    INSTALLED_APPS += ['sslserver']
 
 # Disable migrations only during the build process
 if os.environ.get('VERCEL_BUILD'):
